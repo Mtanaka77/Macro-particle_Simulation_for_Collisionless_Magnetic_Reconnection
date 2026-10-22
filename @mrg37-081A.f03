@@ -86,9 +86,10 @@
 !*                        /fulmov/                                     *
 !*                              ---> partbc                            *
 !*                              ---> srimp1-srimp2                     *
-!*                        /cfpsol/,/poissn/,/diag1/                    *
+!*                        /emfild/,/cfpsol/,/poissn/,/diag1/           *
 !*                              ---> fplot3, cplot3                    *
-!*                  /init/ ------ /loadpt/, /readpt/ initally          *
+!*               Only it= -1                                           *
+!*                  /init/ ------ /loadpt/, /readpt/                   *
 !*                                                                     *
 !*      sequential:                                                    *
 !*        /restrt/ ------- arrays (write /read)                        *
@@ -651,7 +652,8 @@
       integer(C_INT) iterm,iterf,iters
       common/emiter/ ase,asb,asl,we,wb,wl,iterm,iterf,iters
 !***
-      integer(C_INT) iresrt,ipc,iwrt,npl,iaverg,cl_first,i,j,k
+      integer(C_INT) iresrt,ipc,iwrt,npl,iaverg,cl_first,i,j,k,  &
+                     l,m,kk,kss(mz)
       common/irest/ iresrt
       real(C_DOUBLE) walltime1,walltime2,walltime3,walltime4,walltime5
 !
@@ -1060,7 +1062,7 @@
       real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz,       &
                                        rxl,ryl,rzl,vxj,vyj,vzj
       real(C_DOUBLE) qmult,wmult
-      integer(C_INT) npr,ipc,ksp,ipar,size,MPIerror 
+      integer(C_INT) npr,ipc,ksp,ipar,size,MPIerror,ierror 
 !
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
                      ex,ey,ez,bx,by,bz,ex0,ey0,ez0,bx0,by0,bz0,  &
@@ -1071,7 +1073,9 @@
       common/srimp8/ amu,avhh
 !
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
-                                         exa,eya,eza,bxa,bya,bza
+                                         exa,eya,eza,bxa,bya,bza,qq1
+!
+      real(C_float),dimension(0:mx-1,0:my,0:mz-1) :: qqi
 !---------------------------------------------------------------
 !
       integer(C_INT) pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
@@ -1370,8 +1374,6 @@
 !---------------------------
 !  For accumulating
 !---------------------------
-!* $ mpif90 -mcmodel=medium -fPIC -O2 @mrg37-081A.f03 &> log
-!* $ mpiexec -n 6 a.out &  
 !
       if(ipc.ge.1) then
 !                    <-- rxl-rzl and vyj
@@ -2533,6 +2535,13 @@
 !$OMP END DO
 !$OMP END PARALLEL
 !
+!  kl: 0.125, k: 0.75, kr: 0.125
+!    -1         0        1
+!    mz-2       mz-1     mz
+!  k= -2 -> q(mz-2)= q(-2)
+!  k= -1 -> q(mz-1)= q(-1)
+!  k=  0 ->          q( 0)
+!
       call mpi_allreduce (q(-2,-1,-2),qq(-2,-1,-2),mxyzA,mpi_real8, &
                           mpi_sum,mpi_comm_world,ierror)
 !                                                +++++
@@ -3311,7 +3320,7 @@
 !
 !
 !-----------------------------------------------------------------------
-      subroutine vmesh1 (ax)
+      subroutine vmesh1 (q)
 !-----------------------------------------------------------------------
 !  Copy vmesh3 -> vmesh1
 !
@@ -3319,17 +3328,17 @@
       implicit none
       include 'param_081A.h' 
 !                              +++++++++++++++++++++++
-      real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: ax
+      real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: q
       integer(C_INT) i,j,k
 !***
-!  Collapse the initial array ax(-2:mx+1,-1:my+1,-2:mz+1)  
-!  into the end array: ax(0:mx-1,0:my,0:mz-1)
+!  Collapse the initial array q(-2:mx+1,-1:my+1,-2:mz+1)  
+!  into the end array: q(0:mx-1,0:my,0:mz-1)
 !  1) x-direction
 !
       do i= -2,-1
       do j= -1,my+1 
       do k= -2,mz+1            !<-- Fold back
-      ax(mx+i,j,k)= ax(i,j,k)  !<-- ax(-1) -> ax(mx-1)
+      q(mx+i,j,k)= q(i,j,k)  !<-- q(-1) -> q(mx-1)
       end do
       end do
       end do
@@ -3337,7 +3346,7 @@
       do i= mx,mx+1
       do j= -1,my+1
       do k= -2,mz+1
-      ax(i-mx,j,k)= ax(i,j,k)  ! ax(mx) -> ax(0)
+      q(i-mx,j,k)= q(i,j,k)  ! q(mx) -> q(0)
       end do
       end do
       end do
@@ -3348,32 +3357,39 @@
       j= -1 
       do k= -2,mz+1
       do i= 0,mx-1  
-      ax(i,0,k)= ax(i,0,k) +ax(i,-1,k) ! ax(0) +ax(-1) -> ax(0)
+      q(i,0,k)= q(i,0,k) +q(i,-1,k) ! q(0) +q(-1) -> q(0)
       end do
       end do
 !
       j= my+1
       do k= -2,mz+1
       do i= 0,mx-1
-      ax(i,my,k)= ax(i,my,k) +ax(i,my+1,k) ! ax(my) +ax(my+1)
-      end do                               !  = ax(my)
+      q(i,my,k)= q(i,my,k) +q(i,my+1,k) ! q(my) +q(my+1)
+      end do                               !  = q(my)
       end do
 !
 !  3) z-direction
 !   Periodic
+!  kl: 0.125, k: 0.75, kr: 0.125
+!    -1         0        1
+!    mz-2       mz-1     mz
 !
+!  k= -2 -> q(mz-2)= q(-2)
+!  k= -1 -> q(mz-1)= q(-1)
+!  k=  0 -> q(mz  )= q( 0)
       do k= -2,-1
       do j= 0,my   
       do i= 0,mx-1 
-      ax(i,j,mz+k)= ax(i,j,k)  ! Fold back
+      q(i,j,mz+k)= q(i,j,k)  ! Fold back
       end do
       end do
       end do
 !
+!  k= ma -> q(0)= q(mz)
       do k= mz,mz+1
       do j= 0,my
       do i= 0,mx-1
-      ax(i,j,k-mz)= ax(i,j,k)  ! ax(mz) -> ax(0)
+      q(i,j,k-mz)= q(i,j,k)  ! q(mz) -> q(0)
       end do
       end do
       end do
@@ -8378,8 +8394,6 @@
 !     common/table/  pxl(-mx:2*mx-1),pxc(-mx:2*mx-1),pxr(-mx:2*mx-1), &
 !                    pyl(-1:my+1),pyc(-1:my+1),pyr(-1:my+1),          &
 !                    pzl(-mz:2*mz-1),pzc(-mz:2*mz-1),pzr(-mz:2*mz-1)
-!* $ mpif90 -mcmodel=medium -fPIC -O2 @mrg37-081A.f03 &> log
-!* $ mpiexec -n 6 a.out &  ! number_of_cpu's 
 !
 !     do j= -5,-1
       pyl(-1)= 0 !-1
@@ -8506,11 +8520,11 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,290)
+        write(11,*)
         write(11,*) 'inner cells: mx,my+1,mz=',mx,my+1,mz
         write(11,291) hx,hy,hz
         write(11,292)
-  290   format(//)
+  290   format(/)
   291   format('# hx=',1pd13.5,',  hy=',d13.5,',  hz=',d13.5,/)
   292   format(' i,     gx,      hx;     gy,    hy;     gz,    hz',/)
 !
@@ -8958,9 +8972,9 @@
 !     xout= gx(i-1) +hx/2 +hx*ranfp(0.d0)  !<-- gx(0)= -hx/2 !!
 !     yout= gy(j-1)       +hy*ranfp(0.d0)  !    gx(mx-1)= hx*mx -hx/2 
 !     zout= gz(k-1) +hz/2 +hz*ranfp(0.d0)  !     the rightside border
-      x(l)= xmax*ranfp(0.d0)   !-hx/2  /partbc/
+      x(l)= xmax*ranfp(0.d0)   ! in /partbc/
       y(l)= ymax*ranfp(0.d0)
-      z(l)= zmax*ranfp(0.d0)   !-hz/2
+      z(l)= zmax*ranfp(0.d0) 
 !
       if(io_pe.eq.1) then
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
@@ -8980,8 +8994,6 @@
       npr= l
 !     ++++++
 !
-!* $ mpif90 -mcmodel=medium -fPIC -O2 @mrg37-081A.f03 &> log
-!* $ mpiexec -n 6 a.out &  ! number_of_cpu's 
       if(io_pe.eq.1) then
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
@@ -10972,8 +10984,6 @@
 !
 !* 1. Plot at constant y: subscript i first.
 !     real(C_float) q(mx,my+1,mz),xmax,ymax,zmax
-!* $ mpif90 -mcmodel=medium -fPIC -O2 @mrg37-081A.f03 &> log
-!* $ mpiexec -n 6 a.out &  
 !
       qc2 = 1./16.
       jk= 0
@@ -11011,6 +11021,7 @@
       end do
 !
       iwrite= .false.
+!     +++++++++++++++
 !
 !* 2. Plot at constant z: subscript i first.
 !
