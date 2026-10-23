@@ -1,6 +1,6 @@
 !*** Late Version: 2026/10/13 ******************* Fortran 2003/2008 ****
 !*                                                                     *
-!*   ## Macro-particle Kinetic Simulation for Solar EM Simulation ##   *
+!*   ## Macro-particle Kinetic Simulation for the Solar EM Fields ##   *
 !*     << Fully-implicit scheme with kinetic ions and electrons >>     *
 !*                                                                     *
 !*    Refs.: 1) M.Tanaka, J.Comput.Phys., vol. 79, 206 (1988).         *
