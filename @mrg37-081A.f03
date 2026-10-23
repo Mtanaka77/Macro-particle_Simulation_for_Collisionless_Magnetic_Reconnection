@@ -48,6 +48,8 @@
 !    3) Graphical plots are used in real*4
 !
 !    4) The MPI routine mpi_allgather is with parallel processors.
+!      The edge points are added periodically by /vmesh3/ and /vmesh1/.
+!
 !    5) Arrays are:
 !     real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: ex,ey,ez,...
 !     real(C_DOUBLE),dimension(3,mx,my+1,mz) :: xx in cfpsol routines.
@@ -1121,7 +1123,7 @@
                      exi,eyi,ezi,bxi,byi,bzi,                 &
                      bsqi,acx,acy,acz,ach,dvx,dvy,dvz,vy0,ranfp
       integer(C_INT) l,i,il,ir,ip,j,jl,jr,jp,k,kl,kr,kp,      &
-                     iwrt,syme,symb
+                     iwrt,syme,symb 
 !
       integer(C_INT) io_pe
       common/iope66/ io_pe
@@ -1314,6 +1316,7 @@
       end if
 !   ++++++++++++++++++++++++++++++++++++++++++++
       end do
+!
 !
 ! Synchronize
       call mpi_allreduce (wkix,wxsq,1,mpi_real8,mpi_sum,  &
@@ -3254,9 +3257,9 @@
       do i= -2,-1
       do j= -1,my+1 
       do k= -2,mz+1            !<-- Fold back
-      ax(mx+i,j,k)= ax(i,j,k)  !<-- ax(-1) -> ax(mx-1)
-      ay(mx+i,j,k)= ay(i,j,k)  !   to ax(i+mx)
-      az(mx+i,j,k)= az(i,j,k)
+      ax(mx+i,j,k)= ax(mx+i,j,k) +ax(i,j,k)  !<-- ax(-1) -> ax(mx-1)
+      ay(mx+i,j,k)= ay(mx+i,j,k) +ay(i,j,k)  !   to ax(i+mx)
+      az(mx+i,j,k)= az(mx+i,j,k) +az(i,j,k)
       end do
       end do
       end do
@@ -3264,9 +3267,9 @@
       do i= mx,mx+1
       do j= -1,my+1
       do k= -2,mz+1
-      ax(i-mx,j,k)= ax(i,j,k)  ! ax(mx) -> ax(0)
-      ay(i-mx,j,k)= ay(i,j,k)
-      az(i-mx,j,k)= az(i,j,k)
+      ax(i-mx,j,k)= ax(i-mx,j,k) +ax(i,j,k)  ! ax(mx) -> ax(0)
+      ay(i-mx,j,k)= ay(i-mx,j,k) +ay(i,j,k)
+      az(i-mx,j,k)= az(i-mx,j,k) +az(i,j,k)
       end do
       end do
       end do
@@ -3298,9 +3301,9 @@
       do k= -2,-1
       do j= 0,my   
       do i= 0,mx-1 
-      ax(i,j,mz+k)= ax(i,j,k)  ! Fold back
-      ay(i,j,mz+k)= ay(i,j,k)
-      az(i,j,mz+k)= az(i,j,k)
+      ax(i,j,mz+k)= ax(i,j,mz+k) +ax(i,j,k)  ! Fold back
+      ay(i,j,mz+k)= ay(i,j,mz+k) +ay(i,j,k)
+      az(i,j,mz+k)= az(i,j,mz+k) +az(i,j,k)
       end do
       end do
       end do
@@ -3308,9 +3311,9 @@
       do k= mz,mz+1
       do j= 0,my
       do i= 0,mx-1
-      ax(i,j,k-mz)= ax(i,j,k)  ! ax(mz) -> ax(0)
-      ay(i,j,k-mz)= ay(i,j,k)
-      az(i,j,k-mz)= az(i,j,k)
+      ax(i,j,k-mz)= ax(i,j,k-mz) +ax(i,j,k)  ! ax(mz) -> ax(0)
+      ay(i,j,k-mz)= ay(i,j,k-mz) +ay(i,j,k)
+      az(i,j,k-mz)= az(i,j,k-mz) +az(i,j,k)
       end do
       end do
       end do
@@ -3338,7 +3341,7 @@
       do i= -2,-1
       do j= -1,my+1 
       do k= -2,mz+1            !<-- Fold back
-      q(mx+i,j,k)= q(i,j,k)  !<-- q(-1) -> q(mx-1)
+      q(mx+i,j,k)= q(mx+i,j,k) +q(i,j,k)  !<-- q(-1) -> q(mx-1)
       end do
       end do
       end do
@@ -3346,7 +3349,7 @@
       do i= mx,mx+1
       do j= -1,my+1
       do k= -2,mz+1
-      q(i-mx,j,k)= q(i,j,k)  ! q(mx) -> q(0)
+      q(i-mx,j,k)= q(i-mx,j,k) +q(i,j,k)  ! q(mx) -> q(0)
       end do
       end do
       end do
@@ -3380,16 +3383,16 @@
       do k= -2,-1
       do j= 0,my   
       do i= 0,mx-1 
-      q(i,j,mz+k)= q(i,j,k)  ! Fold back
+      q(i,j,mz+k)= q(i,j,mz+k) +q(i,j,k)  ! Fold back
       end do
       end do
       end do
 !
-!  k= ma -> q(0)= q(mz)
+!  k= mz -> q(0)= q(mz)
       do k= mz,mz+1
       do j= 0,my
       do i= 0,mx-1
-      q(i,j,k-mz)= q(i,j,k)  ! q(mz) -> q(0)
+      q(i,j,k-mz)= q(i,j,k-mz) +q(i,j,k)  ! q(mz) -> q(0)
       end do
       end do
       end do
@@ -3727,18 +3730,18 @@
 !**** 11/10/89 ******************************************* 4/18/92 *****
 !*                                                                     *
 !*   This field-solver is designed for inhomogeneous and magnetized    *
-!*   plasmas.  since the field is solved in the real space, almost     *
-!*   any deformation of the plasmas is allowed.                        *
+!*   plasmas. since the field is solved in the real space, almost any  *
+!*   deformation of the plasmas is allowed.                            *
 !*                                                                     *
-!*   (ref.: M.Tanaka, J.Comput.Phys. 1992.)                            *
+!*   (Ref.: M.Tanaka, J.Comput.Phys. 1992)                             *
 !********************************************************* 3/09/87 *****
 !*                                                                     *
-!*   The e*b, grad-b and curvature drift currents of the electrons     *
+!*   The E*B, grad-b and curvature drift currents of the electrons     *
 !*   are incorporated in the "coupled field-particle equation".        *
 !*   this equation is free from the courant condition by virtue of     *
 !*   its full-implicitness.                                            *
 !*                                                                     *
-!*   (Ref.:  J.Comput.Phys., vol.79, p.209 (1988))                     *
+!*   (Ref.: M. Tanaka, J.Comput.Phys., vol.79, p.209, 1988)            *
 !***********************************************************************
 !
       use, intrinsic :: iso_c_binding
