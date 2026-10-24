@@ -1,4 +1,4 @@
-!*** Late Version: 2026/10/13 ******************* Fortran 2003/2008 ****
+!*** Late Version: 2026/10/23 ******************* Fortran 2003/2008 ****
 !*                                                                     *
 !*   ## Macro-particle Kinetic Simulation for the Solar EM Fields ##   *
 !*     << Fully-implicit scheme with kinetic ions and electrons >>     *
@@ -13,7 +13,7 @@
 !*                                                                     *
 !*    Simulation files                                                 *
 !*    1. @mrg37_081A.f03: Simulation code, job serial '81'             *
-!*    2. param_081A.h   : parameter file                               *
+!*    2. param_081A.h   : Parameter file                               *
 !*    3. rec_3d81A      : Simulation time, box size, parameters of     *
 !*                  ions and electrons, decentering parameter, etc,    *
 !*                                                                     *
@@ -23,7 +23,7 @@
 !*  * Author: Motohiko Tanaka, Ph.D., Chikusa, Nagoya 464, Japan.      *
 !*                                                                     *
 !*   GPL-3.0 License, at https://github.com/Mtanaka77/                 *
-!*   Macro-Particle_Simulation_of_Magnetic_Reconnection                *
+!*   Macro-Particle_Simulation_of_Collisionless_Magnetic_Reconnection  *
 !*                                                                     *
 !**** First Version: 7/31/1996 ************************* 09/12/2000 ****
 !
@@ -45,14 +45,16 @@
 !
 !    2) The nearest integer: ip= hxi*rxl(l) +0.5 -> 0.001 - 0.999 -> 0
 !      The sharing is, xx = hxi*rxl(l) -ip  L.1200. 
-!    3) Graphical plots are used in real*4
+!
+!    3) The outside edge points (-2,-1) and (mx,mx+1) in the x,z directions 
+!      are folded back (and added) to (mx-2,mx-1) and (0,1) by /vmesh3/.
 !
 !    4) The MPI routine mpi_allgather is with parallel processors.
-!      The edge points are added periodically by /vmesh3/ and /vmesh1/.
 !
 !    5) Arrays are:
-!     real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: ex,ey,ez,...
-!     real(C_DOUBLE),dimension(3,mx,my+1,mz) :: xx in cfpsol routines.
+!      real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: ex,ey,ez,...
+!      real(C_DOUBLE),dimension(3,mx,my+1,mz) :: xx in cfpsol routines.
+!      Graphical plots are used as real*4
 !
 !    6) The first term of an array starts at 1, np1(1)=1, nz1(1)=1
 !     in the /cfpsol/. The code starts with 0, as np1(1)-1 for particles.
@@ -3241,7 +3243,7 @@
       subroutine vmesh3 (ax,ay,az) 
 !-----------------------------------------------------------------------
 !  Move two meshes (either outside left or right) into inside 
-!  either mesh= 0 or mx-1. Ori kaesi (x,z), ori tatami (y)
+!  mesh= 0 or mx-1. Orikaesi (x,z), and oritatami (y).
 !
       use, intrinsic :: iso_c_binding
       implicit none
