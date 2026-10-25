@@ -47,7 +47,8 @@
 !      The sharing is, xx = hxi*rxl(l) -ip  L.1200. 
 !
 !    3) The outside edge points (-2,-1) and (mx,mx+1) in the x,z directions 
-!      are folded back (and added) to (mx-2,mx-1) and (0,1) by /vmesh3/.
+!      are folded back (and added) to interior (0,1) and (mx-2,mx-1) by /vmesh3/.
+!      Graphical plots are used as real*4
 !
 !    4) The MPI routine mpi_allgather is with parallel processors.
 !
@@ -106,7 +107,7 @@
 !*
 !* >> gfortran (Generic)
 !* $ mpif90 -mcmodel=medium -fPIC -O2 @mrg37-081A.f03 &> log
-!* $ mpiexec -n 6 a.out &  ! number_of_cpu's 
+!* $ mpiexec -n 6 a.out &  !! number_of_cpu's 
 !*
 !* >> PGFortran (if installed)
 !* $ mpif90 -mcmodel=medium -fast -tp=px -O2 @mrg37-081A.f03 &> log
@@ -10994,15 +10995,16 @@
       jk= 0
 !
       npy= 0
-      do j= 0,my  !,2  !<-- j+1= my+1
+      do j= 1,my-1  !,2  !<-- j+1= my+1
+!
       npy= npy +1
       jr= pyc(j+1)
       jl= pyc(j-1)
-!
+
         npz= 0
         do k= 0,mz-1  !,2  !<-- k+1= mz
-        npz= npz +1
 !
+        npz= npz +1
         kr= pzc(k+1) 
         kl= pzc(k-1)
 !
@@ -11010,19 +11012,18 @@
         a(jk)= qc2*(    q(i1,jr,kr) +2*q(i1,jr,k)   +q(i1,jr,kl)  &
                     + 2*q(i1,j ,kr) +4*q(i1,j ,k) +2*q(i1,j ,kl)  &
                     +   q(i1,jl,kr) +2*q(i1,jl,k)   +q(i1,jl,kl) )
+        end do
 !
-        if(j.eq.my/2 .and. iwrite) then
+        if(iwrite) then
           if(io_pe.eq.1) then
             open (unit=11,file=praefixc//'.11'//suffix2,             & 
                   status='unknown',position='append',form='formatted')
-            write(11,990) j,k,a(jk)
-  990       format(' j,k,a(jk)=',2i5,1pd12.3)
+            write(11,990) j,a(jk)
+  990       format(' j,a(jk)=',i5,1pd12.3)
 !
             close(11)
           end if
         end if
-
-        end do
       end do
 !
       iwrite= .false.
