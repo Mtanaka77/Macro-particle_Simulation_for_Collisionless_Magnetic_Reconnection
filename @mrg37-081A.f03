@@ -867,13 +867,15 @@
       iaver= iaver +1
       call faverg (iaver,npl)
 !
-!* after faverg ! 
+!* after synchronize - to test purpose
 !
+      if(.false.) then
       call diag1 (xi,yi,zi,vxi,vyi,vzi,fvxi,fvyi,fvzi,qspec(1),ipar,rank,1,npr)
       call diag1 (xe,ye,ze,vxe,vye,vze,fvxe,fvye,fvze,qspec(2),ipar,rank,2,npr)
 !
       call fvdata (fvxi,fvyi,fvzi,qspec(1),1)
       call fvdata (fvxe,fvye,fvze,qspec(2),2)
+      end if
 !
 !     gnu0= 1./200.
       gnu0= 0.d0
