@@ -47,21 +47,21 @@
 !      The sharing is, xx = hxi*rxl(l) -ip  L.1200. 
 !
 !    3) The outside edge points (-2,-1) and (mx,mx+1) in the x,z directions 
-!      are folded back (and added) to interior (0,1) and (mx-2,mx-1) by /vmesh3/.
-!      Graphical plots are used as real*4
+!      are folded back (and added) to interior (0,1) and (mx-2,mx-1) region
+!      by /vmesh3/. Graphical plots are used as real*4
 !
 !    4) The MPI routine mpi_allgather is with parallel processors.
 !
-!    5) Arrays are:
+!    5) Arrays are in (periodic, bound, periodic):
 !      real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: ex,ey,ez,...
-!      real(C_DOUBLE),dimension(3,mx,my+1,mz) :: xx in cfpsol routines.
+!      real(C_DOUBLE),dimension(3,mx,my+1,mz) :: xx in /cfpsol/ routines.
 !      Graphical plots are used as real*4
 !
 !    6) The first term of an array starts at 1, np1(1)=1, nz1(1)=1
 !     in the /cfpsol/. The code starts with 0, as np1(1)-1 for particles.
 !
 !    7) /fulmov/, /cfpsol/, /emcoef/, /wwstbi/j/k/m are in parallel         
-!      execution, /poissn/, /emcof3/ are single (non-parallel).
+!      execution, but /poissn/, /emcof3/ are single (non-parallel).
 !   
 !    8) The files is created by /fplot3/ and /cplot3/
 !       by this program. They are converted by 'ps2pdf forta.77.ps' 
@@ -81,7 +81,7 @@
 !
 !   10) This implicit particle code is free from the Courant condition.
 !      Rather it is bound by not dt*wce >> 0. It is different from
-!      explicit codes, which must satisfy Delta_x/Delta_t > 1.
+!      explicit codes which must satisfy Delta_x/Delta_t > 1.
 !
 !   > Generic function names are used as sqrt <- dsqrt, max <- amax1
 !
@@ -456,7 +456,7 @@
       call trans (xi,yi,zi,vxi,vyi,vzi,               &
                   xe,ye,ze,vxe,vye,vze,mue,vpe,vhe,   &
                   np1,np2,nz1,nz2,npr,kstart,         &
-                  tfinal,cptot,ipar,size)
+                  tfinal,cptot,ipar,rank,size)
 !   +++++++++++++++++++++++++++++++++++++++++++++++++++++
 !
 !************************
@@ -473,6 +473,7 @@
 !   The history plot is made.
         open (unit=77,file=praefixc//'.77'//suffix2//'.ps',      &
               status='unknown',position='append',form='formatted')
+!
 !   ---------------------------          ++++++
         call histry
 !   ---------------------------
@@ -510,7 +511,7 @@
       if(io_pe.eq.1) then
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
-        write(11,*) 'Write L.500 (Final procedure)'
+        write(11,*) 'Write at L.510 (Final procedure)'
         close(11)
       end if
 !       
@@ -533,6 +534,7 @@
 !
         open (unit=77,file=praefixc//'.77'//suffix2//'.ps',      &
               status='unknown',position='append',form='formatted')
+!
         call plote
         close(77)
       end if
@@ -597,7 +599,7 @@
       subroutine trans (xi,yi,zi,vxi,vyi,vzi,               &
                         xe,ye,ze,vxe,vye,vze,mue,vpe,vhe,   &
                         np1,np2,nz1,nz2,npr,kstart,         &
-                        tfinal,cptot,ipar,size)
+                        tfinal,cptot,ipar,rank,size)
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
@@ -606,11 +608,12 @@
       include 'param_081A.h'
 !
       integer(C_INT),dimension(npc) :: np1,np2,nz1,nz2
-      integer(C_INT) npr,kstart,ipar,size
+      integer(C_INT) npr,kstart,ipar,rank,size
       real(C_DOUBLE) tfinal,cptot
 !
       real(C_DOUBLE),dimension(np0) :: xi,yi,zi,vxi,vyi,vzi,           &
                                        xe,ye,ze,vxe,vye,vze,mue,vpe,vhe
+      real(C_DOUBLE),dimension(101,7) :: fvxi,fvyi,fvzi,fvxe,fvye,fvze
 !
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
                      ex,ey,ez,bx,by,bz,ex0,ey0,ez0,bx0,by0,bz0,  &
@@ -866,13 +869,11 @@
 !
 !* after faverg ! 
 !
-      if(.false.) then
-        call diag1 (xi,yi,zi,vxi,vyi,vzi,qspec(1),npr,1)
+      call diag1 (xi,yi,zi,vxi,vyi,vzi,fvxi,fvyi,fvzi,qspec(1),ipar,rank,1,npr)
+      call diag1 (xe,ye,ze,vxe,vye,vze,fvxe,fvye,fvze,qspec(2),ipar,rank,2,npr)
 !
-        call diag1 (xe,ye,ze,vxe,vye,vze,qspec(2),npr,2)
-!
-        call fvplot
-      end if
+      call fvdata (fvxi,fvyi,fvzi,qspec(1),1)
+      call fvdata (fvxe,fvye,fvze,qspec(2),2)
 !
 !     gnu0= 1./200.
       gnu0= 0.d0
@@ -4553,11 +4554,11 @@
       end do
 !
 !-----------------------------------------------------------------------
-!  The solution of the 3D CFP equations.
+!  The solution of the three-dimensional CFP equations.
 !-----------------------------------------------------------------------
-!* 1)  choose /bcgstb/ when the core 3*3 matrix is off-diagonal dominant
+!* 1)  Choose /bcgstb/ when the core 3*3 matrix is off-diagonal dominant
 !     (if no convergence with /bcgsts/.)              date: 9/15/92.
-!  2)  the field boundary values are treated in the matrix calculation.
+!  2)  The field boundary values are treated in the matrix calculation.
 !
 !***
 !                                    set the parameters
@@ -7675,7 +7676,7 @@
 !
 !
 !-----------------------------------------------------------------------
-      subroutine diag1 (x,y,z,vx,vy,vz,qmult,npr,ksp)
+      subroutine diag1 (x,y,z,vx,vy,vz,fvx,fvy,fvz,qmult,ipar,rank,ksp,npr)
 !-----------------------------------------------------------------------
 !  Plot x-vz and/or qix-qez
 !
@@ -7685,23 +7686,24 @@
       include 'param_081A.h' 
       include 'mpif.h'
 !
-      real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz
+      real(C_DOUBLE),dimension(np0) :: x,y,z,vx,vy,vz,       &
+                                       xx,yy,zz,vvx,vvy,vvz, &
+                                       x3,y3,z3,vx3,vy3,vz3
+      real(C_DOUBLE),dimension(101,7) :: fvx,fvy,fvz
+!
       real(C_DOUBLE) qmult
-      integer(C_INT) npr,ksp,MPIerror
+      integer(C_INT) ipar,rank,ksp,npr,nn,ierror,MPIerror
 !
       integer(C_INT) io_pe
       common/iope66/ io_pe
 ! 
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
-                                              ex,ey,ez,bx,by,bz,       &
-                                              ex0,ey0,ez0,bx0,by0,bz0, &
-                                              qix,qiy,qiz,qex,qey,qez, &
-                                              emx,emy,emz,qi,qe,amu,avhh
+                     ex,ey,ez,bx,by,bz,ex0,ey0,ez0,bx0,by0,bz0, &
+                     qix,qiy,qiz,qex,qey,qez,emx,emy,emz,qi,qe, &
+                     amu,avhh
       common/fields/ ex,ey,ez,bx,by,bz,ex0,ey0,ez0,bx0,by0,bz0
       common/srimp7/ qix,qiy,qiz,qex,qey,qez,emx,emy,emz,qi,qe
       common/srimp8/ amu,avhh
-!
-      real(C_DOUBLE),dimension(np0) :: ggg
 !---------------------------------------------------------------
 !
       integer(C_INT) pxl,pxc,pxr,pyl,pyc,pyr,pzl,pzc,pzr
@@ -7743,280 +7745,136 @@
 !                                   vzrmsd,vsqr,anpt        !<-- real*4
 !     common/diagpr/ vxav,vyav,vzav,vxrmsd,vyrmsd,vzrmsd,vsqr,anpt
 !
-      real(C_DOUBLE),dimension(101,7,2) :: fvx,fvy,fvz
-      common/diagp2/ fvx,fvy,fvz
-!
       integer(C_INT) iwrt,lskip,jj,ix,iy,iz,i,j,k,l,itag,iperio
       real(C_DOUBLE) vlimx,vlimz,delx,delz,x1,x2,radi,  &
                      xcnt,ycnt,zcnt,ddx,ddy,ddz,        &
                      anp,bs
-!                             +++++++++
-      real(C_float),dimension(0:mx-1,0:my,0:mz-1) :: &
-                                        eex,eey,eez,qqi,qqe,qqq
 !
 !*  ####### diag1 #######
 !
-      if(iwrt(it,nha).ne.0) return
-!            .and. iwrt(it,nplot).ne.0) return
-!     ++++++++++++++++++++++++++++++++++++++++++++++++
-!
-      call lblbot (t8)
-!
-!* [1] ******************************************
-      if(iwrt(it,nplot).eq.0 .and. io_pe.eq.1) then
+      if(iwrt(it,nplot).eq.0) then
 !             ++++++++
-      do j=1,7
-      do i=1,101
-      fvx(i,j,ksp)= 1.d-2
-      fvy(i,j,ksp)= 1.d-2
-      fvz(i,j,ksp)= 1.d-2
-      end do
-      end do
+        call lblbot (t8)
 !
-      if(ksp.eq.1) then
-        vlimx= vlima
-        vlimz= vlima
-        delx= 0.04d0*vlima
-        delz= delx
-!
-      else
-        vlimx= vlimb
-        vlimz= vlimb
-        delx= 0.04d0*vlimb
-        delz= delx
-      end if
-!
-      x1= 0.45d0*ymax ! ycent1 of pplot3
-      x2= 0.55d0*ymax ! ycent2
-      radi= rwd
-      lskip=  npr/8000.
-!
-!-----------------------------------------------------------------------
-!*  **Plasma current**
-!-----------------------------------------------------------------------
-!
-!     if(iwrt(it,nplot).eq.0 .and. io_pe.eq.1) then
-      if(.false.) then
-!
-      if(ksp.eq.1) then
-!
-        do k= 0,mz-1
-        do j= 0,my
-        do i= 0,mx-1
-        eex(i,j,k)= qix(i,j,k)
-        eey(i,j,k)= qiy(i,j,k)
-        eez(i,j,k)= qiz(i,j,k)
-        qqi(i,j,k)=  qi(i,j,k)
+!  Clear the arrays
+        do i= 1,np0
+        xx(i)= 0
+        yy(i)= 0
+        zz(i)= 0
+        vvx(i)= 0
+        vvy(i)= 0
+        vvz(i)= 0
         end do
-        end do
-        end do
-!
-!  (qix,qiy,qiz) real*4 
-!
-        open (unit=77,file=praefixc//'.77'//suffix2//'.ps',      &
-              status='unknown',position='append',form='formatted')
-!
-        iperio= 0
-        itag= 1
-!       call fplot3 (eex,eey,eez,0.,0.,0.,real(xmax),real(ymax),real(zmax), &
-!                    iperio,itag,'Ji.total',8)
-!       call cplot3 (qqi,real(xmax),real(ymax),real(zmax),'ion.dens',8)
-!       call pplot3 (x,y,z,vx,vy,vz,real(xmax),real(ymax),real(zmax),  &
-!                    real(x1),real(x2),real(radi),npr,lskip,itag,      &
-!                    'ions    ',8)
-        close(77)
 ! 
-      else if(ksp.eq.2) then
+!  Put the arrays in npc intervals
+        nn= 0
 !
-        do k= 0,mz-1
-        do j= 0,my
-        do i= 0,mx-1
-        eex(i,j,k)= qix(i,j,k) +qex(i,j,k)
-        eey(i,j,k)= qiy(i,j,k) +qey(i,j,k)
-        eez(i,j,k)= qiz(i,j,k) +qez(i,j,k)
-        qqq(i,j,k)=  qi(i,j,k) +qe(i,j,k)
-        end do
-        end do
+        do i= 1,np0
+        if(mod(i-1,npc).eq.rank) then
+          nn= nn +1 
+!
+          xx(i)=  x(i)
+          yy(i)=  y(i)
+          zz(i)=  z(i)
+          vvx(i)= vx(i)
+          vvy(i)= vy(i)
+          vvz(i)= vz(i)
+        end if
         end do
 !
-!  (qqx,qqy,qqz) real*4
-        open (unit=77,file=praefixc//'.77'//suffix2//'.ps',      &
-              status='unknown',position='append',form='formatted')
 !
-        iperio= 0
-        itag= 2
-!       call fplot3 (eex,eey,eez,0.,0.,0.,real(xmax),real(ymax),real(zmax), &
-!                    iperio,itag,'J.total ',8)
-!       call cplot3 (qqq,real(xmax),real(ymax),real(zmax),'el.dens ',8)
-!       call pplot3 (x,y,z,vx,vy,vz,real(xmax),real(ymax),real(zmax),   &
-!                    real(x1),real(x2),real(radi),npr,lskip,itag,       &
-!                    'elec    ',8)
-        close(77)
-      end if
-      end if
+        call mpi_allreduce (xx(1),x3(1),np0,mpi_real8,mpi_sum, &
+                            mpi_comm_world,ierror)
+        call mpi_allreduce (yy(1),y3(1),np0,mpi_real8,mpi_sum, &
+                            mpi_comm_world,ierror)
+        call mpi_allreduce (zz(1),z3(1),np0,mpi_real8,mpi_sum, &
+                            mpi_comm_world,ierror)
+!
+        call mpi_allreduce (vvx(1),vx3(1),np0,mpi_real8,mpi_sum, &
+                            mpi_comm_world,ierror)
+        call mpi_allreduce (vvy(1),vy3(1),np0,mpi_real8,mpi_sum, &
+                            mpi_comm_world,ierror)
+        call mpi_allreduce (vvz(1),vz3(1),np0,mpi_real8,mpi_sum, &
+                            mpi_comm_world,ierror)
+!
+!  All arrays for i= 1 - np0
+        do i= 1,np0
+        x(i)=  x3(i)
+        y(i)=  y3(i)
+        z(i)=  z3(i)
+        vx(i)= vx3(i)
+        vy(i)= vy3(i)
+        vz(i)= vz3(i)
+        end do
+!
 !***
-      end if
-!* [1] ******************************************
+        do i= 1,101
+        do j= 1,7
+        fvx(i,j)= 0 
+        fvy(i,j)= 0 
+        fvz(i,j)= 0 
+        end do
+        end do
 !
-!-----------------------------------------------------------------------
-!*  Temperature.
-!-----------------------------------------------------------------------
-!
-!     if(mod(it,nha).eq.0 .and. io_pe.eq.1) then
-!       open (unit=77,file=praefixc//'.77'//suffix2//'.ps',      &
-!             status='unknown',position='append',form='formatted')
-!
-!       if(ksp.eq.1) then
-!         call temper (x,y,z,vx,vy,vz,qmult,npr,th,tx,1)
-!
-!         call cplot3 (th,xmax,ymax,zmax,11,'tpara.i ',8)
-!         call cplot3 (tx,xmax,ymax,zmax,12,'tperp.i ',8)
-!       else
-!         call temper (x,y,z,vx,vy,vz,qmult,npr,th,tx,2)
-!         call cplot3 (th,xmax,ymax,zmax,13,'tpara.el',8)
-!       end if
-!
-!       close(77)
-!     end if
-!
-!-----------------------------------------------------------------------
-!   Velocity distribution function.
-!-----------------------------------------------------------------------
-!* [2] *********************************************
-      if(iwrt(it,nha).eq.0) then
-!                +++
-!*
-      if(io_pe.eq.1) then
-        open (unit=11,file=praefixc//'.11'//suffix2,             & 
-              status='unknown',position='append',form='formatted')
+        ycnt= 0.5*ymax
+        zcnt= 0.5*zmax
+        ddy= 15.
+        ddz= zmax/6. 
 !
         if(ksp.eq.1) then
-          write(11,'("t8=",f7.1," wkix,wkih=",1p2d12.3)') t8,wkix,wkih
+          vlimx= vlima
+          vlimz= vlima
+          delx= 0.04d0*vlima
+          delz= delx
+!
         else
-          write(11,'("t8=",f7.1," wkex,wkeh=",1p2d12.3)') t8,wkex,wkeh
+          vlimx= vlimb
+          vlimz= vlimb
+          delx= 0.04d0*vlimb
+          delz= delx
         end if
 !
-        close(11)
-      end if
-!
-!  Reset ggg()=0 and reduce the size intervals to all components
-!   Sums of x, y, z, vx,vy, vz
-! [1]
-      do l= 1,np0
-      ggg(l)= 0
-      end do
-!
-      call mpi_allreduce (x(1),ggg(1),np0,mpi_real8,mpi_sum,  & 
-                          mpi_comm_world,MPIerror)
-      do l= 1,np0
-      x(l)= ggg(l)
-      end do
-! [2]
-      do l= 1,np0
-      ggg(l)= 0
-      end do
-!
-      call mpi_allreduce (y(1),ggg(1),np0,mpi_real8,mpi_sum,  & 
-                          mpi_comm_world,MPIerror)
-      do l= 1,np0
-      y(l)= ggg(l)
-      end do
-! [3]
-      do l= 1,np0
-      ggg(l)= 0
-      end do
-!
-      call mpi_allreduce (z(1),ggg(1),np0,mpi_real8,mpi_sum,  & 
-                          mpi_comm_world,MPIerror)
-      do l= 1,np0
-      z(l)= ggg(l)
-      end do
-! [4]
-      do l= 1,np0
-      ggg(l)= 0
-      end do
-!
-      call mpi_allreduce (vx(1),ggg(1),np0,mpi_real8,mpi_sum,  & 
-                          mpi_comm_world,MPIerror)
-      do l= 1,np0
-      vx(l)= ggg(l)
-      end do
-! [5]
-      do l= 1,np0
-      ggg(l)= 0
-      end do
-!
-      call mpi_allreduce (vy(1),ggg(1),np0,mpi_real8,mpi_sum,  & 
-                          mpi_comm_world,MPIerror)
-      do l= 1,np0
-      vy(l)= ggg(l)
-      end do
-! [6]
-      do l= 1,np0
-      ggg(l)= 0
-      end do
-!
-      call mpi_allreduce (vz(1),ggg(1),np0,mpi_real8,mpi_sum,  & 
-                          mpi_comm_world,MPIerror)
-      do l= 1,np0
-      vz(l)= ggg(l)
-      end do
-!***
-!
-      if(io_pe.eq.1) then
-!        ++++++++++
-!
-      ycnt= 0.5*ymax
-      zcnt= 0.5*zmax
-      ddy= 15.
-      ddz= zmax/6. 
-!
 !*
-      do l= 1,np0
-      if(abs(y(l)-ycnt).gt.ddy) go to 332
-      if(abs(z(l)-zcnt).gt.ddz) go to 332  
+        do l= 1,np0
+        if(abs(y(l)-ycnt).gt.ddy) go to 332
+        if(abs(z(l)-zcnt).gt.ddz) go to 332  
 !
-      jj= (z(l) -zcnt)/ddz +3.51           ! z slices
-!        1,2,3, 4, 5,6,7
-      if((jj.ge.1).and.(jj.le.7)) then
+        jj= (z(l) -zcnt)/ddz +3.51  ! z slices
+        if((jj.ge.1).and.(jj.le.7)) then
+!          1,2,3, 4, 5,6,7
+!       vsa(k)= (k -51)/aiv
+!       vsa(k)= vlim*((k -51)/50.d0)
 !
-      ix= (vx(l) +vlimx)/delx +1.0
-      iy= (vy(l) +vlimz)/delz +1.0
-      iz= (vz(l) +vlimz)/delz +1.0
+!         delx= 0.04d0*vlima
+        ix= (vx(l) +vlimx)/delx +1.0
+        iy= (vy(l) +vlimz)/delz +1.0
+        iz= (vz(l) +vlimz)/delz +1.0
 !
-      if(iabs(ix-26).gt.50)  go to 333
-        fvx(ix,jj,ksp)= fvx(ix,jj,ksp) +qmult
+        if(abs(ix-51).le.50) fvx(ix,jj)= fvx(ix,jj) +1. 
+        if(abs(iy-51).le.50) fvy(iy,jj)= fvy(iy,jj) +1. 
+        if(abs(iz-51).le.50) fvz(iz,jj)= fvz(iz,jj) +1. 
+        end if
 !
-  333 if(iabs(iy-26).gt.50)  go to 334
-        fvy(iy,jj,ksp)= fvy(iy,jj,ksp) +qmult
+  332   continue
+        end do
 !
-  334 if(iabs(iz-26).gt.50)  go to 332
-        fvz(iz,jj,ksp)= fvz(iz,jj,ksp) +qmult
-      end if
-!
-  332 continue
-      end do 
-!
-      end if  ! if(io_pe.eq.1) then
       end if  ! if(iwrt(it,nha).eq.0) then
-!
-!* [2] *********************************************
 !
       return
       end subroutine diag1
 !
 !
 !-----------------------------------------------------------------------
-      subroutine fvplot 
+      subroutine fvdata (fvx,fvy,fvz,qmult,ksp)
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
       include 'param_081A.h'
 !
-      real(C_DOUBLE),dimension(101,7,2) :: fvx,fvy,fvz
-      common/diagp2/ fvx,fvy,fvz
+      real(C_DOUBLE),dimension(101,7) :: fvx,fvy,fvz
+      real(C_DOUBLE) qmult
 !
-      integer(C_INT) io_pe
+      integer(C_INT) io_pe,ksp
       common/iope66/ io_pe
 !
       integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
@@ -8041,68 +7899,66 @@
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec(3000,12)
 !
-      real(C_DOUBLE),dimension(101) :: vsa,vsb
-      real(C_float)  fimax,fimin,femax,femin
-      integer(C_INT) k,ILN,iwrt
+      integer(C_INT) iwrt
+      logical  first/.true./
+!
+!* $ mpif90 -mcmodel=medium -fPIC -O2 @mrg37-081A.f03 &> log
+!* $ mpiexec -n 6 a.out &  
 !
       if(iwrt(it,nplot).eq.0 .and. io_pe.eq.1) then
 !**
-        open (unit=77,file=praefixc//'.77'//suffix2//'.ps',        &
-              status='unknown',position='append',form='unformatted')
+!*  Fv-plots for the zones y3 - y4  (total of 7 zones)
+!   Data plots will be done later.
 !
-!*  fv-plots for the zones y3 - y4  (total of 7 zones)
+      if(first) then
+        open (unit=23,file=praefixc//'.23'//suffix2,form='unformatted')
 !
-        do k= 1,101
-        vsa(k)= vlima*(-1.d0 +(k-1)/50.d0) 
-        vsb(k)= vlimb*(-1.d0 +(k-1)/50.d0) 
-        end do
+        write(23) qspec(1),qspec(2)
+        close(23)
 !
-!     call lplot(-2,4,ldec,tdec,edec(1,1),ILN,elab(1),8, &
-!     subroutine lplot (ix,iy,npts,xsc,q,IL,lab1,n1,lab2,n2, & 
+        first= .false.
+      end if
 !
-        ILN= 1
-        call lplmax3 (fvx(1,3,1),fvy(1,3,1),fvz(1,3,1),fimax,fimin,101)
-        call lplmax3 (fvx(1,3,2),fvy(1,3,2),fvz(1,3,2),femax,femin,101)
+      open (unit=23,file=praefixc//'.23'//suffix2, & 
+            status='unknown',position='append',form='unformatted')
 !
-        call hplot (2,4,101,vsa,fvx(1,3,1),0.,fimax,ILN,'io.5/8  ',8, &
-                    '   vx   ',8,'        ',8)
-        call hplot (2,5,101,vsa,fvy(1,3,1),0.,fimax,ILN,'io.5/8  ',8, &
-                    '   vy   ',8,'        ',8)
-        call hplot (2,6,101,vsa,fvz(1,3,1),0.,fimax,ILN,'io.5/8  ',8, &
-                    '   vz   ',8,'        ',8)
-!
-        call hplot (3,4,101,vsb,fvx(1,3,2),0.,femax,ILN,'el.5/8  ',8, &
-                    '   mu   ',8,'        ',8)
-        call hplot (3,5,101,vsb,fvz(1,3,2),0.,femax,ILN,'el.5/8  ',8, &
-                    '   vh   ',8,'        ',8)
-        call chart
-!
-        call hplot (2,4,101,vsa,fvx(1,4,1),0.,fimax,ILN,'io.6/8  ',8, &
-                    '   vx   ',8,'        ',8)
-        call hplot (2,5,101,vsa,fvy(1,4,1),0.,fimax,ILN,'io.6/8  ',8, &
-                    '   vy   ',8,'        ',8)
-        call hplot (2,6,101,vsa,fvz(1,4,1),0.,fimax,ILN,'io.6/8  ',8, &
-                    '   vz   ',8,'        ',8)
-!
-        call hplot (3,4,101,vsb,fvx(1,4,2),0.,femax,ILN,'el.6/8  ',8, &
-                    '   mu   ',8,'        ',8)
-        call hplot (3,5,101,vsb,fvz(1,4,2),0.,femax,ILN,'el.6/8  ',8, &
-                    '   vh   ',8,'        ',8)
-        call chart
-!
-        close(77)
+      write(23) t8,fvx,fvy,fvz,ksp
+      close(23)
+!*
       end if
 !
 !**
       if(iwrt(it,nha).eq.0 .and. io_pe.eq.1) then
 !
-        if(ldec.ge.3000) then
+        if(ldec.ge.3000 .and. ksp.eq.1) then
           call rehist
         end if
       end if
 !
       return
-      end subroutine fvplot
+      end subroutine fvdata
+!
+!
+!------------------------------------------------------
+      subroutine lplmax (f,fmax,fmin,is)
+!------------------------------------------------------
+      use, intrinsic :: iso_c_binding
+      implicit none
+!
+      integer(C_INT) is,i
+      real(C_DOUBLE) f(is)
+      real(C_float) fmax,fmin
+!
+      fmax= -1.e10
+      fmin=  1.e10
+!
+      do i= 1,is
+      fmax= max(fmax,real(f(i)))
+      fmin= min(fmin,real(f(i)))
+      end do
+!
+      return
+      end
 !
 !
 !-----------------------------------------------------------------------
@@ -9418,7 +9274,6 @@
                   edec(i,5),edec(i,6),edec(i,7),edec(i,8)
                   
       end do
-!
       close(11)
 !
 ! 
@@ -9479,43 +9334,21 @@
 !
 !
 !------------------------------------------------------
-      subroutine lplmax (f,fmax,fmin,is)
+      subroutine lplmax3 (fv,fmax,fmin,n)
 !------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
 !
-      integer(C_INT) i,is
-      real(C_DOUBLE) f(is)
-      real(C_float)  fmax,fmin
-!
-      fmax= -1.e10
-      fmin=  1.e10
-!
-      do i= 1,is
-      fmax= max(fmax,real(f(i)))
-      fmin= min(fmin,real(f(i)))
-      end do
-!
-      return
-      end subroutine lplmax
-!
-!
-!------------------------------------------------------
-      subroutine lplmax3 (f1,f2,f3,fmax,fmin,n)
-!------------------------------------------------------
-      use, intrinsic :: iso_c_binding
-      implicit none
-!
-      integer(C_INT) i,n
-      real(C_DOUBLE) f1(n),f2(n),f3(n)
+      integer(C_INT) n,i
+      real(C_DOUBLE) fv(n)
       real(C_float)  fmax,fmin
 !
       fmax= -1.e10
       fmin=  1.e10
 !
       do i= 1,n
-      fmax= max(fmax,real(f1(i)),real(f2(i)),real(f3(i)))
-      fmin= min(fmin,real(f1(i)),real(f2(i)),real(f3(i)))
+      fmax= max(fmax, real(fv(i)) )
+      fmin= min(fmin, real(fv(i)) )
       end do
 !
       return
@@ -10120,7 +9953,7 @@
       go to 1
 !
 !-----------------------------------------------------------------------
-      entry hplot (ix,iy,npts,vsc,ff,ymin,ymax,IL,lab1,n1,lab2,n2,  &
+      entry hplot (ix,iy,npts,vsc,ff,ymax,ymin,IL,lab1,n1,lab2,n2,  &
                    lab3,n3)
 !-----------------------------------------------------------------------
       iplot=2
