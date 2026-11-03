@@ -824,7 +824,7 @@
         call clocki (walltime4,size,cl_first)
 !
 !     if(io_pe.eq.1) then
-      if(iwrt(it,nha).eq.0 .and. io_pe.eq.1) then
+      if(iwrt(it,2*nha).eq.0 .and. io_pe.eq.1) then
 !
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
@@ -869,7 +869,8 @@
 !
 !* after synchronize - to test purpose
 !
-      if(.false.) then
+      if(.true.) then
+!     if(.false.) then
       call diag1 (xi,yi,zi,vxi,vyi,vzi,fvxi,fvyi,fvzi,qspec(1),ipar,rank,1,npr)
       call diag1 (xe,ye,ze,vxe,vye,vze,fvxe,fvye,fvze,qspec(2),ipar,rank,2,npr)
 !
@@ -4360,7 +4361,7 @@
       ase= 0
 !
 !        +++++++++++++++++
-      if(iwrt(it,nha).eq.0 .and. io_pe.eq.1) then
+      if(iwrt(it,2*nha).eq.0 .and. io_pe.eq.1) then
         edec(ldec,1)=  wb
         edec(ldec,2)=  we
         edec(ldec,3)=  wbp2
@@ -5481,7 +5482,7 @@
       rpr(2) = eps
       rpr(3) = t5 - t1
 !
-      if(iwrt(it,nha).eq.0 .and. io_pe.eq.1) then
+      if(iwrt(it,2*nha).eq.0 .and. io_pe.eq.1) then
 !     if(.false.) then
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
@@ -5754,7 +5755,7 @@
  2000 itrm = itr
       eps  = rsdl
 !
-      if(iwrt(it,nha).eq.0 .and. io_pe.eq.1) then
+      if(iwrt(it,2*nha).eq.0 .and. io_pe.eq.1) then
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
@@ -7749,7 +7750,7 @@
 !
       integer(C_INT) iwrt,lskip,jj,ix,iy,iz,i,j,k,l,itag,iperio
       real(C_DOUBLE) vlimx,vlimz,delx,delz,x1,x2,radi,  &
-                     xcnt,ycnt,zcnt,ddx,ddy,ddz,        &
+                     xcnt,ycnt,zcnt,ddx,ddy,ddz,aiv,    &
                      anp,bs
 !
 !*  ####### diag1 #######
@@ -7784,7 +7785,6 @@
         end if
         end do
 !
-!
         call mpi_allreduce (xx(1),x3(1),np0,mpi_real8,mpi_sum, &
                             mpi_comm_world,ierror)
         call mpi_allreduce (yy(1),y3(1),np0,mpi_real8,mpi_sum, &
@@ -7810,8 +7810,8 @@
         end do
 !
 !***
-        do i= 1,101
         do j= 1,7
+        do i= 1,101
         fvx(i,j)= 0 
         fvy(i,j)= 0 
         fvz(i,j)= 0 
@@ -7836,6 +7836,7 @@
           delz= delx
         end if
 !
+        aiv= 50/vlimx !vmax2
 !*
         do l= 1,np0
         if(abs(y(l)-ycnt).gt.ddy) go to 332
@@ -7844,18 +7845,25 @@
         jj= (z(l) -zcnt)/ddz +3.51  ! z slices
         if((jj.ge.1).and.(jj.le.7)) then
 !          1,2,3, 4, 5,6,7
-!       vsa(k)= (k -51)/aiv
-!       vsa(k)= vlim*((k -51)/50.d0)
 !
-!         delx= 0.04d0*vlima
-        ix= (vx(l) +vlimx)/delx +1.0
-        iy= (vy(l) +vlimz)/delz +1.0
-        iz= (vz(l) +vlimz)/delz +1.0
+!* $ mpif90 -mcmodel=medium -fPIC -O2 @mrg37-081A.f03 &> log
+!* $ mpiexec -n 6 a.out &  
+        ix= aiv*vx(l) +51. ! 50*vx/vlimx +51
+        iy= aiv*vy(l) +51.
+        iz= aiv*vz(l) +51.
 !
         if(abs(ix-51).le.50) fvx(ix,jj)= fvx(ix,jj) +1. 
         if(abs(iy-51).le.50) fvy(iy,jj)= fvy(iy,jj) +1. 
         if(abs(iz-51).le.50) fvz(iz,jj)= fvz(iz,jj) +1. 
         end if
+!  cntem3
+!     aiv= 50/vmax2
+!     do k= 1,101
+!     xsc(k)= (k -51)/aiv
+!     end do
+!     do i= ns+1,ns+np
+!     ix= aiv*vx(i) +51.
+!     if(iabs(ix-51).le.50) fvx(ix)= fvx(ix) +1. 
 !
   332   continue
         end do
@@ -7903,9 +7911,6 @@
 !
       integer(C_INT) iwrt
       logical  first/.true./
-!
-!* $ mpif90 -mcmodel=medium -fPIC -O2 @mrg37-081A.f03 &> log
-!* $ mpiexec -n 6 a.out &  
 !
       if(iwrt(it,nplot).eq.0 .and. io_pe.eq.1) then
 !**
