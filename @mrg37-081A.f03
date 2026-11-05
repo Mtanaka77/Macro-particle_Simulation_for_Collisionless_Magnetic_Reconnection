@@ -7821,7 +7821,7 @@
         ycnt= 0.5*ymax
         zcnt= 0.5*zmax
         ddy= 0.75 *ymax/2 
-        ddz= 0.5  *zmax/2. 
+        ddz= 1.0  *zmax/2. 
 !
         if(ksp.eq.1) then
           vlimx= vlima
@@ -7901,9 +7901,7 @@
       if(iwrt(it,nplot).eq.0 .and. io_pe.eq.1) then
 !**
 !*  Fv-plots for the zones y3 - y4  (total of 7 zones)
-!   Data plots will be done later.
-!* $ mpif90 -mcmodel=medium -fPIC -O2 @mrg37-081A.f03 &> log
-!* $ mpiexec -n 6 a.out &  
+!   Data plots will be done later.by offline/
 !
       if(first) then
         open (unit=23,file=praefixc//'.23'//suffix2,form='formatted')
@@ -7913,16 +7911,6 @@
               status='unknown',position='append',form='formatted')
       end if
 !
-!     if(first) then
-!
-!       write(23) qspec(1),qspec(2)
-!       close(23)
-!
-!       first= .false.
-!     end if
-!
-!     open (unit=23,file=praefixc//'.23'//suffix2, & 
-!           status='unknown',position='append',form='unformatted')
 !
       write(23,100) t8,ksp
   100 format('t8,ksp=',f10.1,i5)
@@ -7939,7 +7927,9 @@
 !
       close(23)
 !
-      if(io_pe.eq.1) then
+!
+      if(.false.) then
+!     if(io_pe.eq.1) then
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
         write(11,*)
