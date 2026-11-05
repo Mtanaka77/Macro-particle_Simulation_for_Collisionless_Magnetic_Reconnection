@@ -7870,7 +7870,7 @@
       real(C_DOUBLE),dimension(101,7) :: fvx,fvy,fvz
       real(C_DOUBLE) qmult
 !
-      integer(C_INT) io_pe,ksp
+      integer(C_INT) io_pe,ksp,ii
       common/iope66/ io_pe
 !
       integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
@@ -7918,7 +7918,7 @@
         do j= 1,7
         do i= 1,101
         write(23,200) fvx(i,j),fvy(i,j),fvz(i,j)  !<-- ksp= 1 and 2
-  200   format(i5,3f10.1)
+  200   format(3f10.1)
         end do
         end do
 !
