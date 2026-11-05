@@ -1,4 +1,4 @@
-!*** Late Version: 2026/10/23 ******************* Fortran 2003/2008 ****
+!*** Late Version: 2026/11/05 ******************* Fortran 2003/2008 ****
 !*                                                                     *
 !*   ## Macro-particle Kinetic Simulation for the Solar EM Fields ##   *
 !*     << Fully-implicit scheme with kinetic ions and electrons >>     *
@@ -7749,7 +7749,7 @@
 !     common/diagpr/ vxav,vyav,vzav,vxrmsd,vyrmsd,vzrmsd,vsqr,anpt
 !
       integer(C_INT) iwrt,lskip,jj,ix,iy,iz,i,j,k,l,itag,iperio
-      real(C_DOUBLE) vlimx,vlimz,delx,delz,x1,x2,radi,  &
+      real(C_DOUBLE) vlimx,vlimz,x1,x2,radi,  &
                      xcnt,ycnt,zcnt,ddx,ddy,ddz,aiv,    &
                      anp,bs
 !
@@ -7820,50 +7820,36 @@
 !
         ycnt= 0.5*ymax
         zcnt= 0.5*zmax
-        ddy= 15.
-        ddz= zmax/6. 
+        ddy= 0.75 *ymax/2 
+        ddz= 0.5  *zmax/2. 
 !
         if(ksp.eq.1) then
           vlimx= vlima
           vlimz= vlima
-          delx= 0.04d0*vlima
-          delz= delx
 !
         else
           vlimx= vlimb
           vlimz= vlimb
-          delx= 0.04d0*vlimb
-          delz= delx
         end if
 !
-        aiv= 50/vlimx !vmax2
+        aiv= 50/vlimx 
 !*
         do l= 1,np0
         if(abs(y(l)-ycnt).gt.ddy) go to 332
         if(abs(z(l)-zcnt).gt.ddz) go to 332  
 !
-        jj= (z(l) -zcnt)/ddz +3.51  ! z slices
+        jj= 7*z(l)/zmax +1.d0      ! z slices
         if((jj.ge.1).and.(jj.le.7)) then
 !          1,2,3, 4, 5,6,7
 !
-!* $ mpif90 -mcmodel=medium -fPIC -O2 @mrg37-081A.f03 &> log
-!* $ mpiexec -n 6 a.out &  
-        ix= aiv*vx(l) +51. ! 50*vx/vlimx +51
-        iy= aiv*vy(l) +51.
+        ix= aiv*vx(l) +51. ! 50*vx/vlimx +51  ion 5.d-3  vlima=0.02
+        iy= aiv*vy(l) +51. !                  el  5.d-2  vlimb=0.20
         iz= aiv*vz(l) +51.
 !
         if(abs(ix-51).le.50) fvx(ix,jj)= fvx(ix,jj) +1. 
         if(abs(iy-51).le.50) fvy(iy,jj)= fvy(iy,jj) +1. 
         if(abs(iz-51).le.50) fvz(iz,jj)= fvz(iz,jj) +1. 
         end if
-!  cntem3
-!     aiv= 50/vmax2
-!     do k= 1,101
-!     xsc(k)= (k -51)/aiv
-!     end do
-!     do i= ns+1,ns+np
-!     ix= aiv*vx(i) +51.
-!     if(iabs(ix-51).le.50) fvx(ix)= fvx(ix) +1. 
 !
   332   continue
         end do
@@ -7909,28 +7895,62 @@
                      efe,efb,etot0,bxc,byc,bzc,vlima,vlimb,bmin,emin,&
                      edec(3000,12)
 !
-      integer(C_INT) iwrt
+      integer(C_INT) iwrt,i,j
       logical  first/.true./
 !
       if(iwrt(it,nplot).eq.0 .and. io_pe.eq.1) then
 !**
 !*  Fv-plots for the zones y3 - y4  (total of 7 zones)
 !   Data plots will be done later.
+!* $ mpif90 -mcmodel=medium -fPIC -O2 @mrg37-081A.f03 &> log
+!* $ mpiexec -n 6 a.out &  
 !
       if(first) then
-        open (unit=23,file=praefixc//'.23'//suffix2,form='unformatted')
-!
-        write(23) qspec(1),qspec(2)
-        close(23)
-!
+        open (unit=23,file=praefixc//'.23'//suffix2,form='formatted')
         first= .false.
+      else
+        open (unit=23,file=praefixc//'.23'//suffix2, &
+              status='unknown',position='append',form='formatted')
       end if
 !
-      open (unit=23,file=praefixc//'.23'//suffix2, & 
-            status='unknown',position='append',form='unformatted')
+!     if(first) then
 !
-      write(23) t8,fvx,fvy,fvz,ksp
+!       write(23) qspec(1),qspec(2)
+!       close(23)
+!
+!       first= .false.
+!     end if
+!
+!     open (unit=23,file=praefixc//'.23'//suffix2, & 
+!           status='unknown',position='append',form='unformatted')
+!
+      write(23,100) t8,ksp
+  100 format('t8,ksp=',f10.1,i5)
+!
+      do j= 1,7
+      write(23,130) j
+  130 format('j=',i5)
+!
+      do i= 1,101
+      write(23,200) i,fvx(i,j),fvy(i,j),fvz(i,j)  !<-- ksp= 1 and 2
+  200 format('i=',i5,3f10.1)
+      end do
+      end do
+!
       close(23)
+!
+      if(io_pe.eq.1) then
+        open (unit=11,file=praefixc//'.11'//suffix2,             & 
+              status='unknown',position='append',form='formatted')
+        write(11,*)
+        write(11,*) 't8,ksp=',t8,ksp
+!
+        do i= 1,101
+        write(11,970) i,fvx(i,3),fvy(i,3),fvz(i,3),fvx(i,4),fvy(i,4),fvz(i,4)
+  970   format(' i,fvx(i,3),fvx(1,4)=',i5,3f10.1,2x,3f10.1)
+        end do
+        close(11)
+      end if
 !*
       end if
 !
