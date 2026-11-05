@@ -7903,27 +7903,24 @@
 !*  Fv-plots for the zones y3 - y4  (total of 7 zones)
 !   Data plots will be done later.by offline/
 !
-      if(first) then
-        open (unit=23,file=praefixc//'.23'//suffix2,form='formatted')
-        first= .false.
-      else
-        open (unit=23,file=praefixc//'.23'//suffix2, &
-              status='unknown',position='append',form='formatted')
-      end if
+        if(first) then
+          open (unit=23,file=praefixc//'.23'//suffix2,form='formatted')
+          first= .false.
+        else
+          open (unit=23,file=praefixc//'.23'//suffix2, &
+                status='unknown',position='append',form='formatted')
+        end if
 !
 !
-      write(23,100) t8,ksp
-  100 format('t8,ksp=',f10.1,i5)
+        write(23,100) t8,ksp
+  100   format('t8,ksp=',f10.1,i5)
 !
-      do j= 1,7
-      write(23,130) j
-  130 format('j=',i5)
-!
-      do i= 1,101
-      write(23,200) i,fvx(i,j),fvy(i,j),fvz(i,j)  !<-- ksp= 1 and 2
-  200 format('i=',i5,3f10.1)
-      end do
-      end do
+        do j= 1,7
+        do i= 1,101
+        write(23,200) fvx(i,j),fvy(i,j),fvz(i,j)  !<-- ksp= 1 and 2
+  200   format(i5,3f10.1)
+        end do
+        end do
 !
       close(23)
 !
