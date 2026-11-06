@@ -874,8 +874,8 @@
       call diag1 (xi,yi,zi,vxi,vyi,vzi,fvxi,fvyi,fvzi,qspec(1),ipar,rank,1,npr)
       call diag1 (xe,ye,ze,vxe,vye,vze,fvxe,fvye,fvze,qspec(2),ipar,rank,2,npr)
 !
-      call fvdata (fvxi,fvyi,fvzi,qspec(1),1)
-      call fvdata (fvxe,fvye,fvze,qspec(2),2)
+      call fvdata (fvxi,fvyi,fvzi,1)
+      call fvdata (fvxe,fvye,fvze,2)
       end if
 !
 !     gnu0= 1./200.
@@ -7861,16 +7861,17 @@
 !
 !
 !-----------------------------------------------------------------------
-      subroutine fvdata (fvx,fvy,fvz,qmult,ksp)
+      subroutine fvdata (fvx,fvy,fvz,ksp)
 !-----------------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
       include 'param_081A.h'
 !
       real(C_DOUBLE),dimension(101,7) :: fvx,fvy,fvz
-      real(C_DOUBLE) qmult
+      real*4   aksp
 !
-      integer(C_INT) io_pe,ksp,ii
+      integer(C_INT) io_pe,ksp
+      character*7    aa7
       common/iope66/ io_pe
 !
       integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
@@ -7902,6 +7903,8 @@
 !**
 !*  Fv-plots for the zones y3 - y4  (total of 7 zones)
 !   Data plots will be done later.by offline/
+!* $ mpif90 -mcmodel=medium -fPIC -O2 @mrg37-081A.f03 &> log
+!* $ mpiexec -n 6 a.out &  !! number_of_cpu's 
 !
         if(first) then
           open (unit=23,file=praefixc//'.23'//suffix2,form='formatted')
@@ -7912,8 +7915,13 @@
         end if
 !
 !
-        write(23,100) t8,ksp
-  100   format('t8,ksp=',f10.1,i5)
+        aa7= 't8,ksp='
+        aksp= ksp
+        write(23,100) aa7
+        write(23,110) t8,aksp
+!       write(23,110) ksp
+  100   format(a7)
+  110   format(f10.1,f5.1)
 !
         do j= 1,7
         do i= 1,101
