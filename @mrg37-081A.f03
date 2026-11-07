@@ -7693,7 +7693,6 @@
                                        xx,yy,zz,vvx,vvy,vvz, &
                                        x3,y3,z3,vx3,vy3,vz3
       real(C_DOUBLE),dimension(101,7) :: fvx,fvy,fvz
-!
       real(C_DOUBLE) qmult
       integer(C_INT) ipar,rank,ksp,npr,nn,ierror,MPIerror
 !
@@ -7854,7 +7853,7 @@
   332   continue
         end do
 !
-      end if  ! if(iwrt(it,nha).eq.0) then
+      end if 
 !
       return
       end subroutine diag1
@@ -7869,9 +7868,9 @@
 !
       real(C_DOUBLE),dimension(101,7) :: fvx,fvy,fvz
       real*4   aksp
+      character*7    aa7
 !
       integer(C_INT) io_pe,ksp
-      character*7    aa7
       common/iope66/ io_pe
 !
       integer(C_INT) it,ldec,iaver,ifilx,ifily,ifilz,iloadp,         &
@@ -7903,8 +7902,6 @@
 !**
 !*  Fv-plots for the zones y3 - y4  (total of 7 zones)
 !   Data plots will be done later.by offline/
-!* $ mpif90 -mcmodel=medium -fPIC -O2 @mrg37-081A.f03 &> log
-!* $ mpiexec -n 6 a.out &  !! number_of_cpu's 
 !
         if(first) then
           open (unit=23,file=praefixc//'.23'//suffix2,form='formatted')
@@ -7917,9 +7914,9 @@
 !
         aa7= 't8,ksp='
         aksp= ksp
+!
         write(23,100) aa7
         write(23,110) t8,aksp
-!       write(23,110) ksp
   100   format(a7)
   110   format(f10.1,f5.1)
 !
