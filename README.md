@@ -89,6 +89,7 @@ Also plot the velocity distributions with param_081Af.h (by offline)
 
  > $ gfortran @3dfvdata.f03 &
 
+ > $ a.out &
 
 ### Simulation of Two Flux Bundles
 
