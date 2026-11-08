@@ -83,9 +83,9 @@ Execution by mpiexec (may need some tens of processors)
 
  > $ mpiexec -n 6 a.out &      !  (number_of_cpu)= 6 
 
-Also the velocity distributions (offline)
+Also plot the velocity distributions (later by offline)
 
- > $ gfortran @3dfvdata.f03
+ > $ gfortran @3dfvdata.f03 &
 
 
 ### Simulation of Two Flux Bundles
