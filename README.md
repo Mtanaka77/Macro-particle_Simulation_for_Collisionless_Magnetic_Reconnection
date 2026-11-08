@@ -87,7 +87,7 @@ Execution by mpiexec (may need some tens of processors)
 
 Also plot the velocity distributions with param_081Af.h (by offline)
 
- > $ gfortran @3dfvdata.f03 &
+ > $ gfortran @3dfvdata.f03
 
  > $ a.out &
 
