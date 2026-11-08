@@ -83,7 +83,7 @@ Execution by mpiexec with the control file rec_3d81A (may need some tens of proc
  > $ mpif90 -mcmodel=medium -fPIC @mrg37-081A.f03 -I/opt/fftw3/include 
 -L/opt/fftw3/lib -lfftw3 &> log
 
- > $ mpiexec -n 6 a.out &      !  (number_of_cpu)= 6 
+ > $ mpiexec -n 6 a.out &      !!!  (number_of_cpu)= 6 
 
 Also plot the velocity distributions with the parameter file param_081Af.h and  
 read-only file forta.230a, for example (by offline)
