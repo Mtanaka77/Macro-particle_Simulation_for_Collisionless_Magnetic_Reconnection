@@ -85,7 +85,7 @@ Execution by mpiexec (may need some tens of processors)
 
  > $ mpiexec -n 6 a.out &      !  (number_of_cpu)= 6 
 
-Also plot the velocity distributions (later by offline)
+Also plot the velocity distributions with param_081Af.h (by offline)
 
  > $ gfortran @3dfvdata.f03 &
 
