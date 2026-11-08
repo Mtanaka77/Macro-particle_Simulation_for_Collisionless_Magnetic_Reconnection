@@ -6,7 +6,7 @@ in earth and astrophysical physical spaces (Phys. Plasmas, Tanaka, 1995, 1996).
 This was connected to heavy ions in collisionless parallel shocks (J.Geophys.Res., 
 Shimazu et. al., 1996).
 Now the updated macro-particle simulation code, and the velocity distributions by offline
-are shown (2026).
+are shown here (2026).
 
 
 ### Magnetic Reconnection in Solar-Magnetospheric Couplings ###
