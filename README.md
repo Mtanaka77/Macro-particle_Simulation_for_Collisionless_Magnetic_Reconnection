@@ -4,7 +4,8 @@ This page is discussed on the large-scale electromagnetic particle simulation
 (J. Comp. Physics, Tanaka, 1993), which had a striking result of magnetic reconnection
 in earth and astrophysical physical spaces (Phys. Plasmas, Tanaka, 1995, 1996). 
 This was connected to heavy ions in collisionless parallel shocks (J.Geophys.Res., 
-Shimazu et. al., 1996)
+Shimazu et. al., 1996).
+New the macro-particle simulation code and the velocity distributions by offline.
 
 
 ### Magnetic Reconnection in Solar-Magnetospheric Couplings ###
