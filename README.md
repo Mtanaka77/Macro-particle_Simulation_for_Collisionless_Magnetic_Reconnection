@@ -77,7 +77,7 @@ The BASH settings of Linux:
 
 > export LD_LIBRARY_PATH=/opt/mpich/lib/:/opt/openblas/lib/:/usr/local/lib/:/usr/lib/:$LD_LIBRARY_PATH
 
-Compilation of mpif90 needs the parameter files param_A81A.h.
+Compilation of mpif90 needs the parameter file param_A81A.h.
 Execution by mpiexec with the control file rec_3d81A (may need some tens of processors)
 
  > $ mpif90 -mcmodel=medium -fPIC @mrg37-081A.f03 -I/opt/fftw3/include 
