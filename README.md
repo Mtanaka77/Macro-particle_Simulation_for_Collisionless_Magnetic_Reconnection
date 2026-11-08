@@ -80,7 +80,8 @@ The BASH settings of Linux:
 Compilation of mpif90 needs the parameter files param_A81A.h.
 Execution by mpiexec with the control file rec_3d81A (may need some tens of processors)
 
- > $ mpif90 -mcmodel=medium -fPIC @mrg37-081A.f03 -I/opt/fftw3/include -L/opt/fftw3/lib -lfftw3
+ > $ mpif90 -mcmodel=medium -fPIC @mrg37-081A.f03 -I/opt/fftw3/include 
+-L/opt/fftw3/lib -lfftw3 &> log
 
  > $ mpiexec -n 6 a.out &      !  (number_of_cpu)= 6 
 
