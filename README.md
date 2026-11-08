@@ -5,7 +5,8 @@ This page is discussed on the large-scale electromagnetic particle simulation
 in earth and astrophysical physical spaces (Phys. Plasmas, Tanaka, 1995, 1996). 
 This was connected to heavy ions in collisionless parallel shocks (J.Geophys.Res., 
 Shimazu et. al., 1996).
-Now the update macro-particle simulation code and the velocity distributions by offline.
+Now the update macro-particle simulation code, and the velocity distributions by offline
+are shown.
 
 
 ### Magnetic Reconnection in Solar-Magnetospheric Couplings ###
