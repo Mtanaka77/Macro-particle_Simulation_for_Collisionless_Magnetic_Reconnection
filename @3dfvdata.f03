@@ -27,7 +27,7 @@
       character   sname*6,fig_label*32
 !
       real(C_DOUBLE),dimension(101,7) :: fvx,fvy,fvz
-      real(C_DOUBLE) t8,qspec(4)
+      real(C_DOUBLE) t8,qspec(4),vlima,vlimb
 !
       integer*4   ksp,ILN
       character   suffix*3,knum(30)*2
@@ -46,6 +46,9 @@
 !
       tmin=   0.d0
       tmax=   2.d4
+!
+      vlima= 0.02d0
+      vlimb= 0.20d0
 !
       call date_and_time_7 (date_now,ctime)
 !
@@ -120,7 +123,7 @@
       if(time.lt.tmin) go to 100
       if(time.gt.tmax) go to 700
 !
-      call vdistr (t8,fvx,fvy,fvz,ksp)
+      call vdistr (t8,fvx,fvy,fvz,vlima,vlimb,ksp)
 !
       if(t8.ge.400.d0 .and. ksp.eq.2) go to 800
       go to 100
@@ -167,7 +170,7 @@
 !
 !
 !-------------------------------------------------------------
-      subroutine vdistr (t8,fvx,fvy,fvz,ksp)
+      subroutine vdistr (t8,fvx,fvy,fvz,vlima,vlimb,ksp)
 !-------------------------------------------------------------
       use, intrinsic :: iso_c_binding
       implicit none
@@ -175,7 +178,7 @@
       include     'param_081Af.h'
       real(C_DOUBLE),dimension(101,7) :: fvx,fvy,fvz
       real(C_DOUBLE),dimension(101) :: vsa,vsb
-      real(C_DOUBLE) t8
+      real(C_DOUBLE) t8,vlima,vlimb
 !
       integer*4  ksp,ILN,i,k 
       real*4     fmax30,fmin30,fmax60,fmin60,fmax1,fmin1,fmax2,fmin2, &
@@ -190,8 +193,8 @@
       call lblbot(t8)
 !
       do k= 1,101
-      vsa(k)= 0.02*(k-51)/50.d0
-      vsb(k)= 0.20*(k-51)/50.d0
+      vsa(k)= vlima*(k-51)/50.d0  ! 0.02
+      vsb(k)= vlimb*(k-51)/50.d0  ! 0.20
       end do
 !
       ILN= 1
