@@ -6095,6 +6095,7 @@
 !
         do ii= 1,3
         i= ii
+!
         do j= 1,nob
         jc= na(i,j)
         jj= ja(i,j)
@@ -6103,8 +6104,10 @@
         end do
         end do
 !
+!
         do ii= 1,3
         i= 3*mx +ii
+!
         do j= 1,nob
         jc= na(i,j)
         jj= ja(i,j)
