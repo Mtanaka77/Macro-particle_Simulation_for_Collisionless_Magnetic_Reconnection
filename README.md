@@ -65,7 +65,7 @@ But, actually Dt*\wce > 10 is required for electron tracking.
 
 ### Execution Scripts ###
 
-Linux: Compilation mpif90 by gfortran (-fPIC) or PGI (-fast -tp=px)
+Linux: Compilation mpif90 by gfortran (-fPIC) or PGI (-fast -tp=px): 
 
  > mpich-4: ./configure --prefix=/opt/mpich-4 >&1 | tee conf.txt
 
@@ -86,7 +86,7 @@ Execution by mpiexec with the control file rec_3d81A (may need some tens of proc
  > $ mpiexec -n 6 a.out &      !!!  (number_of_cpu)= 6 
 
 Also plot the velocity distributions with the parameter file param_081Af.h and  
-read-only file forta.230a, for example (by offline): 
+a.out by the read-only file forta.230a, for example (by offline): 
 
  > $ gfortran @3dfvdata.f03
 
