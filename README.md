@@ -71,14 +71,14 @@ Linux: Compilation mpif90 by gfortran (-fPIC) or PGI (-fast -tp=px)
 
  > fftw3: ./configure --disable-shared --enable-maintainer-mode --enable-threads --prefix=/opt/fftw3
 
-The BASH settings of Linux:
+The BASH settings for Linux:
 
 > export PATH=/opt/mpich/bin/:/opt/fftw3/bin/:/usr/local/bin/:/usr/bin/:.:$PATH
 
 > export LD_LIBRARY_PATH=/opt/mpich/lib/:/opt/openblas/lib/:/usr/local/lib/:/usr/lib/:$LD_LIBRARY_PATH
 
 Compilation of mpif90 needs the parameter file param_A81A.h.
-Execution by mpiexec with the control file rec_3d81A (may need some tens of processors)
+Execution by mpiexec with the control file rec_3d81A (may need some tens of processors): 
 
  > $ mpif90 -mcmodel=medium -fPIC @mrg37-081A.f03 -I/opt/fftw3/include 
 -L/opt/fftw3/lib -lfftw3 &> log
@@ -86,7 +86,7 @@ Execution by mpiexec with the control file rec_3d81A (may need some tens of proc
  > $ mpiexec -n 6 a.out &      !!!  (number_of_cpu)= 6 
 
 Also plot the velocity distributions with the parameter file param_081Af.h and  
-read-only file forta.230a, for example (by offline)
+read-only file forta.230a, for example (by offline): 
 
  > $ gfortran @3dfvdata.f03
 
