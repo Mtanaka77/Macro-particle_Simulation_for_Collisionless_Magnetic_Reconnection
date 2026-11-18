@@ -661,7 +661,7 @@
       common/emiter/ ase,asb,asl,we,wb,wl,iterm,iterf,iters
 !***
       integer(C_INT) iresrt,ipc,iwrt,npl,iaverg,cl_first,i,j,k,  &
-                     l,m,kk,kss(mz)
+                     l,m,kk,kss(my+1)
       common/irest/ iresrt
       real(C_DOUBLE) walltime1,walltime2,walltime3,walltime4,walltime5
 !
@@ -5891,7 +5891,7 @@
       integer(C_INT) jm,ierr  
 !
       real(C_DOUBLE) a0
-      integer(C_INT) i,j,j0,j1,jc,ii,jj
+      integer(C_INT) i1,i2,i,j,j0,j1,jc,ii,jj
       logical :: first= .true.
 !
       integer(C_INT) io_pe
@@ -5967,27 +5967,32 @@
 !
       if(.false.) then
 !     if(io_pe.eq.1 .and. first) then
-!!        first= .false.
+!!      first= .false.
+!
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        do ii= 1,3
-        i= ii
+!     np1(k)= (k-1)*3*mx*(my+1)*kd +1    !<-- np1(1)=1
+!     np2(k)=     k*3*mx*(my+1)*kd       !<-- np2(2)=3*mx*myA*kd
+        i1= 1
+        i2= 3*mx*(my+1)*kd
+        write(11,*) 'wwstbs: i1,i2=',i1,i2
+!
+        do i= i1,i2
         do j= 1,nob
-        jc= na(i,j)
-        jj= ja(i,j)
-        write(11,'("# i,j,jc,ax,jj,aa=",2i6,2x,i10,d12.3,2x,i10,d12.3)') &
-                                                i,j,jc,ax(i,j),jj,aa(i,j)
+        write(11,'("# i,j,na(i,j),ax,ja(i,j),aa=",i8,i4,2x,i10,d12.3,2x, &
+                        i10,d12.3)') i,j,na(i,j),ax(i,j),ja(i,j),aa(i,j)
         end do
         end do
 !
-        do ii= 1,3
-        i= 3*mx +ii
+        i1= 5*3*mx*(my+1)*kd +1
+        i2= 6*3*mx*(my+1)*kd
+        write(11,*) 'wwstbs: i1,i2=',i1,i2
+!
+        do i= i1,i2
         do j= 1,nob
-        jc= na(i,j)
-        jj= ja(i,j)
-        write(11,'("# i,j,jc,ax,jj,aa=",2i6,2x,i10,d12.3,2x,i10,d12.3)') &
-                                                i,j,jc,ax(i,j),jj,aa(i,j)
+        write(11,'("# i,j,na(i,j),ax,ja(i,j),aa=",i8,i4,2x,i10,d12.3,2x, &
+                        i10,d12.3)') i,j,na(i,j),ax(i,j),ja(i,j),aa(i,j)
         end do
         end do
 !
@@ -7810,7 +7815,6 @@
         vy(i)= vy3(i)
         vz(i)= vz3(i)
         end do
-!
 !***
         do j= 1,7
         do i= 1,101
@@ -8702,7 +8706,7 @@
                      rwd2,anbar,                        &
                      ranfp,funr,fun2,ranf,vx1,vy1,vz1
       integer(C_INT) ns,i,j,k,l,m,k2,nn,npr1,npr2,      &
-                     kk,kss(0:mz)
+                     kk,kss(0:my)
 !
 !-----------------------------------------------------------------------
 !   Loading particle positions and velosities:
@@ -8784,6 +8788,7 @@
       do j=1,101
       fv1(j)= fv1(j)/fv1(101)
       end do
+      fv1(101)= 1.d0
 !
 !-----------------------------------------------------------------------
 !     The perpendicular velocity (vy,vz).
@@ -8815,6 +8820,7 @@
       do j=1,101
       fv2(j)= fv2(j)/fv2(101)
       end do
+      fv2(101)= 1.d0
 !
       if(io_pe.eq.1) then
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
@@ -8842,7 +8848,7 @@
 !***
       l= 0
 !     ++++
-      do kk= 0,mz
+      do kk= 0,my
       kss(kk)= 0
       end do
 !
@@ -8864,7 +8870,7 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        kk= mz*z(l)/zmax +1.d0
+        kk= my*y(l)/ymax +1.d0
         kss(kk)= kss(kk) +1
         close(11)
       end if
@@ -8882,8 +8888,8 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-        write(11,*) 'Particles in the z-direction. /init/ '
-        do kk= 1,mz 
+        write(11,*) 'Particles in the y-direction. /init/ '
+        do kk= 1,my 
         write(11,993) kk,kss(kk)
   993   format(' kk,kss(kk)=',i6,i10)
         end do
