@@ -5972,8 +5972,6 @@
         open (unit=11,file=praefixc//'.11'//suffix2,             & 
               status='unknown',position='append',form='formatted')
 !
-!     np1(k)= (k-1)*3*mx*(my+1)*kd +1    !<-- np1(1)=1
-!     np2(k)=     k*3*mx*(my+1)*kd       !<-- np2(2)=3*mx*myA*kd
         i1= 1
         i2= 3*mx*(my+1)*kd
         write(11,*) 'wwstbs: i1,i2=',i1,i2
