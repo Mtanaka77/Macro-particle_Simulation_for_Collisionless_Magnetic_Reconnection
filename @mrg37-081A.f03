@@ -3773,9 +3773,7 @@
 !                              ++++++++
       real(C_DOUBLE),dimension(-2:mx+1,-1:my+1,-2:mz+1) :: &
                                            exa,eya,eza,bxa,bya,bza, &
-                                           bss,                     &
-                                           cjx,cjy,cjz,crx,cry,crz, &
-                                           grh,grx,gry,grz,         &
+                                           bss,cjx,cjy,cjz,grh,     &
                                            rhsx,rhsy,rhsz
 !          +++++++
       real(C_float),dimension(0:mx-1,0:my,0:mz-1) :: &
@@ -3828,8 +3826,7 @@
       real(C_DOUBLE) hxhy4,hxhz4,hyhz4,dtic,dtic2,dtice,dtice2, &
                      rax,ray,raz,aex,aey,aez,grhx,grhy,grhz,    &
                      grbx,grby,grbz,bsq2,bsa1,                  &
-                     ehh,ebx,eby,ebz,drag,mue1,vhh2,            &
-                     cjy1,cjy2,sb2,se2,aldt2
+                     ehh,ebx,eby,ebz,drag,cjy1,cjy2,sb2,se2,aldt2
 !
       integer(C_INT),dimension(mxyz) :: arrayx,arrayy,arrayz
       common/array1d/ arrayx,arrayy,arrayz
@@ -4097,9 +4094,9 @@
       end if 
 !
 !  mue/(qspec(2)*B) (b x dB/dx) ...grx(i,j,k)
-      grx(i,j,k)= ray*grbz -raz*grby
-      gry(i,j,k)= raz*grbx -rax*grbz
-      grz(i,j,k)= rax*grby -ray*grbx
+!     grx(i,j,k)= ray*grbz -raz*grby
+!     gry(i,j,k)= raz*grbx -rax*grbz
+!     grz(i,j,k)= rax*grby -ray*grbx
 !
 !  vhh**2*wspec(2)/(qspec(2)*B) curl_(b x dB/dx)
 !  ach=  qw*epara -(mue(l)/wspec(2))*grha  !<<- parallel of dB/dx
@@ -4111,12 +4108,12 @@
       grhy= grh(i,j,k)*ray
       grhz= grh(i,j,k)*raz
 !
-      crx(i,j,k)= ray*grhz -raz*grhy
-      cry(i,j,k)= raz*grhx -rax*grhz
-      crz(i,j,k)= rax*grhy -ray*grhx
+!     crx(i,j,k)= ray*grhz -raz*grhy
+!     cry(i,j,k)= raz*grhx -rax*grhz
+!     crz(i,j,k)= rax*grhy -ray*grhx
 !
-      mue1= amu(i,j,k)/qspec(2)
-      vhh2= avhh(i,j,k)**2*wspec(2)/qspec(2)
+!     mue1= amu(i,j,k)/qspec(2)
+!     vhh2= avhh(i,j,k)**2*wspec(2)/qspec(2)
 !
 !     +++++++++++++++++
       cjx(i,j,k)= cjx(i,j,k) &
@@ -10008,11 +10005,17 @@
       if(i1.ge.3) go to 10
       if(j1.eq.3.or.j1.ge.5) go to 10
 !                                              ************************
-!                                              ** label of the page. **
+!                                              ** Label of the page. **
 !                                              ************************
       call symbol (0.1,18.0,hh,label(1),0.,8)
-!     call symbol (3.1,18.0,hh,date_now, 0.,10)
-      call symbol (15.9,0.1,hh,'t4=',0.,3)
+      call symbol (3.5,18.0,hh,label(2),0.,8)
+      call symbol (6.9,18.0,hh,label(3),0.,8)
+      call symbol (10.3,18.0,hh,label(4),0.,8)
+      call symbol (13.7,18.0,hh,label(5),0.,8)
+      call symbol (17.1,18.0,hh,label(6),0.,8)
+!
+      call symbol (0.1, 0.1,hh,date_now, 0.,10)
+      call symbol (15.9,0.1,hh,'t8=',0.,3)
       call number (999.0,999.0,hh,time4,0.,5)
 !
    10 continue
@@ -10683,9 +10686,15 @@
 !
       hh= 0.60
       hs= 0.40
-      call symbol (0.1,18.2,hh,label(1),0.,8)
+      call symbol (0.05,18.6,hh,label(1),0.,8)
+      call symbol (2.9,18.6,hh,label(2),0.,8)
+      call symbol (5.8,18.6,hh,label(3),0.,8)
+      call symbol (8.7,18.6,hh,label(4),0.,8)
+      call symbol (11.6,18.6,hh,label(5),0.,8)
+      call symbol (14.7,18.6,hh,label(6),0.,8)
+!
 !     call symbol (0.1, 0.1,hh,date_now,0.,10)
-      call symbol (15.9,0.1,hh,'t=',0.,2)
+      call symbol (15.9,0.1,hh,'t8=',0.,3)
       call number (16.5,0.1,hh,time4,0.,101)
 !
       nz= npz
